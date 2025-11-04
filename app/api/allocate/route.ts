@@ -1,30 +1,37 @@
-// const FundAllocation = {
-//   allocate: function (depositPlans: DepositPlan, deposits: Array<number>) {
-//     axios
-//       .post("http://localhost:9000/allocate", {
-//         depositPlans,
-//         deposits,
-//       })
-//       .then((data) => {
-//         console.log("Allocation response:", data);
-//       })
-//       .catch((error) => {
-//         console.error("Error during fund allocation:", error);
-//       });
-//   },
-// };
-
+import { DepositPlan } from "@/app/types";
 import axios from "axios";
 
 export async function POST(request: Request) {
+  const apiPath = process.env.BACKEND_API ?? "";
+  if (apiPath === "") {
+    return new Response(
+      JSON.stringify({ message: "System was not configured correctly" }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  }
   try {
     const data = await request.json();
-    console.log("Received depositPlans:", data.depositPlans);
-
-    const response = await axios.post("http://localhost:9000/allocate", {
-      depositPlans: data.depositPlans,
-      deposits: data.deposits,
+    const newDepositPlan: DepositPlan[] = [];
+    const deepCopyPlans = JSON.parse(JSON.stringify(data.depositPlans));
+    deepCopyPlans.forEach((depositPlan: DepositPlan) => {
+      if (!depositPlan.isEnabled) {
+        return;
+      }
+      newDepositPlan.push({
+        type: depositPlan.type,
+        allocations: depositPlan.allocations,
+      });
     });
+
+    const body = {
+      depositPlans: newDepositPlan,
+      deposits: data.deposits,
+    };
+
+    const response = await axios.post(`${apiPath}/allocate`, body);
 
     return new Response(JSON.stringify(response.data), {
       status: 200,

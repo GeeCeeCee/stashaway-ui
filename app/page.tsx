@@ -10,7 +10,7 @@ export default function Home() {
   const inputRef = useRef<HTMLInputElement>(null);
   const depositInputRef = useRef<HTMLInputElement>(null);
   const [allocations, setAllocations] = React.useState<{
-    isOkay: boolean;
+    isOkay: boolean | null;
     fundAllocation?: Record<string, number>;
     fundLedgers?: Array<{ [k: string]: number }>;
   }>({ isOkay: true });
@@ -47,7 +47,7 @@ export default function Home() {
     setDepositPlans((depositPlans) => {
       return depositPlans.map((plan) => ({
         ...plan,
-        allocations: [{ portfolioName: name, amount: 0 }, ...plan.allocations],
+        allocations: [{ portfolioName: name, amount: 1 }, ...plan.allocations],
       }));
     });
     // setPortfolioPlans([...portfolioPlans, name]);
@@ -65,6 +65,8 @@ export default function Home() {
 
   const handleFundAllocation = () => {
     const newPlans: any = [];
+
+    setAllocations({ ...allocations, isOkay: null });
 
     depositPlans.forEach((each) =>
       newPlans.push({
@@ -335,8 +337,9 @@ export default function Home() {
                                     )
                                   }
                                   className="w-20 p-1.5"
+                                  min="1"
                                   type="number"
-                                  value={Number(plan.amount) || 0}
+                                  value={Number(plan.amount) || 1}
                                 />
                               </td>
                             </tr>
@@ -401,50 +404,67 @@ export default function Home() {
               depositPlans[1].allocations.length !== 0 &&
               deposits.length > 0 && (
                 <>
-                  <section className="w-full text-center mt-20">
+                  <section className="w-full text-center mt-10 flex flex-col justify-center items-center">
+                    {!depositPlans[0]?.isEnabled &&
+                      !depositPlans[1]?.isEnabled && (
+                        <label className="mr-5 max-w-70">
+                          <i className="text-xs">
+                            Enable at least one plan to allocate the funds.
+                          </i>
+                        </label>
+                      )}
                     <button
-                      className="btn btn-outline btn-primary"
+                      disabled={
+                        !depositPlans[0]?.isEnabled &&
+                        !depositPlans[1]?.isEnabled
+                      }
+                      className="btn btn-outline btn-primary max-w-65 mt-3"
                       onClick={handleFundAllocation}
                     >
                       Allocate Funds
                     </button>
                   </section>
-                  <section className="w-full text-center mt-20">
+                  <section className="w-full text-center mt-20 ">
+                    {allocations.isOkay == null && (
+                      <span className="loading loading-ring loading-md"></span>
+                    )}
                     {allocations.isOkay &&
-                    allocations.fundAllocation != null ? (
-                      <table
-                        className={classNames(
-                          "table table-xs table-pin-rows table-zebra"
-                        )}
-                      >
-                        <thead>
-                          <tr>
-                            <td>Portfolio</td>
-                            <td>Amount Allocated</td>
-                          </tr>
-                        </thead>
-
-                        <tbody>
-                          {Object.keys(allocations.fundAllocation).map(
-                            (plan) => (
-                              <tr key={plan}>
-                                <td>
-                                  <div className="badge badge-soft badge-primary py-4 mt-2 mb-2">
-                                    {plan}
-                                  </div>
-                                </td>
-                                <td>
-                                  <label className="mr-2">$</label>
-                                  <div className="badge badge-soft badge-primary py-4 mt-2 mb-2">
-                                    {allocations.fundAllocation?.[plan] ?? 0}
-                                  </div>
-                                </td>
-                              </tr>
-                            )
+                      allocations.fundAllocation != null && (
+                        <table
+                          className={classNames(
+                            "table table-xs table-pin-rows  center w-65 mx-auto"
                           )}
-                        </tbody>
-                      </table>
-                    ) : (
+                        >
+                          <thead>
+                            <tr>
+                              <td>Portfolio</td>
+                              <td>Amount Allocated</td>
+                            </tr>
+                          </thead>
+
+                          <tbody>
+                            {Object.keys(allocations.fundAllocation).map(
+                              (plan) => (
+                                <tr key={plan}>
+                                  <td>
+                                    <div className="badge badge-soft badge-primary py-4 mt-2 mb-2">
+                                      {plan}
+                                    </div>
+                                  </td>
+                                  <td>
+                                    <label className="mr-2">$</label>
+                                    <div className="badge badge-soft badge-primary py-4 mt-2 mb-2">
+                                      {allocations.fundAllocation?.[plan] ?? 0}
+                                    </div>
+                                  </td>
+                                </tr>
+                              )
+                            )}
+                          </tbody>
+                        </table>
+                      )}
+
+                    {allocations.isOkay === false && (
                       <div className="badge badge-soft badge-error p-3 text-xs w-75">
                         There was an error. Please try again later.
                       </div>
